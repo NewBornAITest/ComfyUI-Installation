@@ -3,6 +3,8 @@
 USER_NAME=$(whoami)
 USER_HOME=$(eval echo ~$USER_NAME)
 
+COMFYUI_PROJECT_NAME = "ComfyUI-NB"
+COMFYUI_INSTALLATION_NAME = "ComfyUI-Installation"
 
 echo "Current directory: $(pwd)"
 script_dir=$(dirname "$(realpath "$0")")
@@ -11,7 +13,7 @@ parent_dir=$(dirname "$script_dir")
 echo "parent_dir Directory: $parent_dir"
 parentparent_dir=$(dirname "$parent_dir")
 echo "parentparent_dir Directory: $parentparent_dir"
-comfy_ui_dir="$parentparent_dir/ComfyUI"
+comfy_ui_dir="${parentparent_dir}/${COMFYUI_PROJECT_NAME}"
 echo "ComfyUI Directory: $comfy_ui_dir"
 
 PYTHON_PATH="${USER_HOME}/miniconda3/bin/python"
@@ -20,7 +22,7 @@ COMFYUI_RUNNER_PATH="${comfy_ui_dir}/main.py"
 COMFYUI_PATH=$comfy_ui_dir
 
 
-cp comfyui-on-cloud/src/install_comfyui.sh .
+cp "${COMFYUI_INSTALLATION_NAME}/src/install_comfyui.sh" .
 
 chmod +x install_comfyui.sh
 ./install_comfyui.sh
@@ -29,14 +31,14 @@ echo " "
 echo " ---------------- comfyui installed "
 echo " "
 
-cp comfyui-on-cloud/src/install_extensions.sh ComfyUI
-cp comfyui-on-cloud/src/install_checkpoints.sh ComfyUI
+cp "${COMFYUI_INSTALLATION_NAME}/src/install_extensions.sh" "${COMFYUI_PROJECT_NAME}"
+cp "${COMFYUI_INSTALLATION_NAME}/src/install_checkpoints.sh" "${COMFYUI_PROJECT_NAME}"
 
 echo " "
 echo " ---------------- automation scripts copied to comfyui directory "
 echo " "
 
-cd ComfyUI
+cd "${COMFYUI_PROJECT_NAME}"
 
 chmod +x install_extensions.sh
 chmod +x install_checkpoints.sh
@@ -45,7 +47,7 @@ chmod +x install_checkpoints.sh
 echo " "
 echo " ---------------- extensions installed "
 echo " "
-./install_checkpoints.sh
+#./install_checkpoints.sh
 #./install_checkpoints_big.sh
 
 echo " "
@@ -72,7 +74,7 @@ echo "fi" >> run_the_server.sh
 
 # Make the script executable
 chmod +x run_the_server.sh
-cp run_the_server.sh ComfyUI
+cp run_the_server.sh "${COMFYUI_PROJECT_NAME}"
 
 echo " "
 echo " ---------------- custom run_the_server.sh created "
