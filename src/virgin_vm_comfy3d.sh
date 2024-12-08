@@ -6,9 +6,9 @@ sudo apt-get --assume-yes install software-properties-common
 sudo apt-get --assume-yes install jq
 sudo apt-get --assume-yes install build-essential
 sudo apt-get --assume-yes install linux-headers-$(uname -r)
-wget https://repo.anaconda.com/miniconda/Miniconda3-py312_24.9.2-0-Linux-x86_64.sh
-chmod +x Miniconda3-py312_24.9.2-0-Linux-x86_64.sh
-./Miniconda3-py312_24.9.2-0-Linux-x86_64.sh -b -p $HOME/miniconda3
+wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.11.0-2-Linux-x86_64.sh
+chmod +x Miniconda3-py310_23.11.0-2-Linux-x86_64.sh
+./Miniconda3-py310_23.11.0-2-Linux-x86_64.sh -b -p $HOME/miniconda3
 ~/miniconda3/bin/conda init bash
 source .bashrc
 # confirm GPU is attached
@@ -24,7 +24,7 @@ sudo cp /var/cuda-repo-ubuntu2204-12-4-local/cuda-*-keyring.gpg /usr/share/keyri
 sudo apt-get update
 # sudo apt-get -y install cuda-toolkit-12-4
 sudo apt-get -y install cuda
-sudo apt-get install -y nvidia-driver-535
+#sudo apt-get install -y nvidia-driver-535
 sudo apt install nvidia-cuda-toolkit
 
 source .bashrc
