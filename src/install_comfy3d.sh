@@ -1,31 +1,105 @@
 #!/bin/bash
 
-sudo apt-get update
-sudo apt-get --assume-yes upgrade
-sudo apt-get --assume-yes install software-properties-common
-sudo apt-get --assume-yes install jq
-sudo apt-get --assume-yes install build-essential
-sudo apt-get --assume-yes install linux-headers-$(uname -r)
-wget https://repo.anaconda.com/miniconda/Miniconda3-py312_23.11.0-2-Linux-x86_64.sh
-chmod +x Miniconda3-py312_23.11.0-2-Linux-x86_64.sh
-./Miniconda3-py312_23.11.0-2-Linux-x86_64.sh -b -p $HOME/miniconda3
-~/miniconda3/bin/conda init bash
-source .bashrc
-# confirm GPU is attached
-lspci | grep -i nvidia
-# confirm GPU not recognized
-nvidia-smi
-# install nvidia drivers and CUDA
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
-sudo mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
-wget https://developer.download.nvidia.com/compute/cuda/12.4.0/local_installers/cuda-repo-ubuntu2204-12-4-local_12.4.0-535.86.10-1_amd64.deb
-sudo dpkg -i cuda-repo-ubuntu2204-12-4-local_12.4.0-535.86.10-1_amd64.deb
-sudo cp /var/cuda-repo-ubuntu2204-12-4-local/cuda-*-keyring.gpg /usr/share/keyrings/
-sudo apt-get update
-sudo apt-get -y install cuda
+USER_NAME=$(whoami)
+USER_HOME=$(eval echo ~$USER_NAME)
 
-source .bashrc
-source .bashrc
-pip install torch==2.5.1 torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
-echo -e "import torch\nprint(torch.cuda.is_available())\nprint(torch.cuda.get_device_name(0))" > test_cuda.py
-python test_cuda.py
+
+echo "Current directory: $(pwd)"
+script_dir=$(dirname "$(realpath "$0")")
+echo "script_dir : $script_dir"
+parent_dir=$(dirname "$script_dir")
+echo "parent_dir Directory: $parent_dir"
+parentparent_dir=$(dirname "$parent_dir")
+echo "parentparent_dir Directory: $parentparent_dir"
+comfy_ui_dir="${parentparent_dir}/ComfyUI-NB"
+echo "ComfyUI Directory: $comfy_ui_dir"
+
+PYTHON_PATH="${USER_HOME}/miniconda3/bin/python"
+BASHRC_PATH="${USER_HOME}/.bashrc"
+COMFYUI_RUNNER_PATH="${comfy_ui_dir}/main.py"
+COMFYUI_PATH=$comfy_ui_dir
+
+# Install comfyui
+git clone https://github.com/NewBornAITest/ComfyUI-NB.git
+pip install -r ComfyUI-NB/requirements.txt
+
+echo " "
+echo " ---------------- comfyui installed "
+echo " "
+
+cp ComfyUI-Installation/src/install_extensions.sh ComfyUI-NB
+cp ComfyUI-Installation/src/install_checkpoints.sh ComfyUI-NB
+
+echo " "
+echo " ---------------- automation scripts copied to comfyui directory "
+echo " "
+
+cd ComfyUI-NB
+
+chmod +x install_extensions.sh
+chmod +x install_checkpoints.sh
+./install_extensions.sh
+
+echo " "
+echo " ---------------- extensions installed "
+echo " "
+./install_checkpoints.sh
+#./install_checkpoints_big.sh
+
+echo " "
+echo " ---------------- checkpoints installed "
+echo " "
+
+
+# Dynamically creating run_the_server.sh
+
+# Create the run_the_server.sh file
+echo "#!/bin/bash" > run_the_server.sh
+echo "" >> run_the_server.sh
+echo "BASHRC_PATH=\"$BASHRC_PATH\"" >> run_the_server.sh
+echo "PYTHON_PATH=\"$PYTHON_PATH\"" >> run_the_server.sh
+echo "COMFYUI_RUNNER_PATH=\"${COMFYUI_PATH}/main.py\"" >> run_the_server.sh
+echo "" >> run_the_server.sh
+echo "# Source the bashrc file" >> run_the_server.sh
+echo "source \$BASHRC_PATH" >> run_the_server.sh
+echo "" >> run_the_server.sh
+echo "# Start ComfyUI using the defined paths" >> run_the_server.sh
+echo "if ! sudo -u $USER_NAME \$PYTHON_PATH \$COMFYUI_RUNNER_PATH --listen; then" >> run_the_server.sh
+echo "    echo \"Error: Failed to start ComfyUI\" >&2" >> run_the_server.sh
+echo "fi" >> run_the_server.sh
+
+# Make the script executable
+chmod +x run_the_server.sh
+cp run_the_server.sh ComfyUI-NB
+
+echo " "
+echo " ---------------- custom run_the_server.sh created "
+echo " "
+
+
+
+SERVICE_FILE_CONTENT="[Unit]
+Description=ComfyUI Server
+
+[Service]
+Type=simple
+ExecStart=${comfy_ui_dir}/run_the_server.sh
+
+
+
+[Install]
+WantedBy=multi-user.target"
+
+# Create the systemd service file
+echo "$SERVICE_FILE_CONTENT" | sudo tee /etc/systemd/system/comfyui.service > /dev/null
+
+# Reload systemd to recognize the new service
+sudo systemctl daemon-reload
+sudo systemctl enable comfyui.service
+sudo systemctl start comfyui.service
+
+echo " "
+echo " ---------------- setup completed "
+echo " "
+echo -e " ---------------- For health check go to this address $(curl -s httpbin.org/ip | jq -r .origin):8188 in your browser"
+
