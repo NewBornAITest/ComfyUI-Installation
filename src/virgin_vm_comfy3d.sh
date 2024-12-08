@@ -22,7 +22,10 @@ wget https://developer.download.nvidia.com/compute/cuda/12.4.0/local_installers/
 sudo dpkg -i cuda-repo-ubuntu2204-12-4-local_12.4.0-550.54.14-1_amd64.deb
 sudo cp /var/cuda-repo-ubuntu2204-12-4-local/cuda-*-keyring.gpg /usr/share/keyrings/
 sudo apt-get update
-sudo apt-get -y install cuda-toolkit-12-4
+# sudo apt-get -y install cuda-toolkit-12-4
+sudo apt-get -y install cuda
+sudo apt-get install -y nvidia-driver-535
+sudo apt install nvidia-cuda-toolkit
 
 source .bashrc
 source .bashrc
