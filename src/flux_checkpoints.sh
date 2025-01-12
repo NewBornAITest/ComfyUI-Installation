@@ -42,6 +42,6 @@ wget --header="Authorization: Bearer $ACCESS_TOKEN" \
 wget --header="Authorization: Bearer $ACCESS_TOKEN" \
     --recursive --no-parent --cut-dirs=1 --reject "index.html*" --no-host-directories \
     -P "$BASE_DIR/loras" \
-    "https://huggingface.co/comfyanonymous/flux_RealismLora_converted_comfyui/tree/main"
+    "https://huggingface.co/comfyanonymous/flux_RealismLora_converted_comfyui/resolve/main/flux_realism_lora.safetensors"
 
 echo "Download complete!"
