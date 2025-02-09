@@ -6,6 +6,12 @@ sudo apt-get --assume-yes install software-properties-common
 sudo apt-get --assume-yes install jq
 sudo apt-get --assume-yes install build-essential
 sudo apt-get --assume-yes install linux-headers-$(uname -r)
+
+# confirm GPU is attached
+lspci | grep -i nvidia
+# confirm GPU not recognized
+nvidia-smi
+
 wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.11.0-2-Linux-x86_64.sh
 chmod +x Miniconda3-py310_23.11.0-2-Linux-x86_64.sh
 ./Miniconda3-py310_23.11.0-2-Linux-x86_64.sh -b -p $HOME/miniconda3
