@@ -1,5 +1,5 @@
-# Use NVIDIA CUDA base image optimized for NVIDIA T4 GPU
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
+# === Stage 1: Base Image with CUDA & System Dependencies ===
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 AS base
 
 # Set environment variables for CUDA & NVIDIA
 ENV NVIDIA_VISIBLE_DEVICES=all
@@ -7,52 +7,57 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV CUDA_HOME=/usr/local/cuda
 
 # Install system dependencies
-# RUN apt-get update && apt-get install -y \
-#     wget software-properties-common jq build-essential \
-#     linux-headers-$(uname -r) git sudo curl && \
-#     rm -rf /var/lib/apt/lists/*
-FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget curl git sudo unzip jq build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-
-# Install system dependencies (including git)
-RUN apt-get update && apt-get install -y wget curl git && rm -rf /var/lib/apt/lists/*
+# === Stage 2: Miniconda Installation ===
+FROM base AS conda
 
 # Install Miniconda
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.11.0-2-Linux-x86_64.sh -O /tmp/miniconda.sh && \
     bash /tmp/miniconda.sh -b -p /opt/miniconda && \
-    rm /tmp/miniconda.sh && \
-    /opt/miniconda/bin/conda init
+    rm /tmp/miniconda.sh
 
-# Set Miniconda path in environment
+# Set Miniconda path
 ENV PATH="/opt/miniconda/bin:$PATH"
 
-# Create a non-root user for security
+# Create a non-root user
 RUN useradd -m -s /bin/bash comfyuser && echo "comfyuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-# Set user to comfyuser
 USER comfyuser
 WORKDIR /home/comfyuser
 
-# Clone the ComfyUI installation repository
+# === Stage 3: Install ComfyUI & Dependencies ===
+FROM conda AS comfyui
+
+# Clone the ComfyUI repository
 RUN git clone https://github.com/NewBornAITest/ComfyUI-Installation.git
 
-# Copy installation scripts to a single directory
+# Copy installation scripts
 WORKDIR /home/comfyuser/ComfyUI-Installation/src
-RUN chmod +x virgin_vm_v2.sh install_v2.sh && \
-    ./virgin_vm_v2.sh  # Run the installation script for CUDA, Miniconda, and dependencies
+RUN chmod +x virgin_vm.sh install.sh
 
-# Activate Conda, install dependencies and PyTorch with CUDA support
-RUN source ~/.bashrc && \
-    pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+# Run installation script for dependencies (skip model downloads)
+ENV SKIP_MODEL_DOWNLOADS=true
+RUN ./virgin_vm.sh && source ~/.bashrc
 
-# Set working directory for ComfyUI setup
+# Install Python dependencies efficiently
+# COPY requirements.txt /tmp/
+# RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Install PyTorch with CUDA support
+RUN pip install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+
+# === Stage 4: Final Runtime Image ===
+FROM comfyui AS final
+
+# Set working directory for ComfyUI
 WORKDIR /home/comfyuser/ComfyUI-Installation/src
 
-# Run the installation script for ComfyUI
-RUN chmod +x install_v2.sh && \
-    ./install_v2.sh  # This will install ComfyUI, extensions, and checkpoints
+# Install ComfyUI and extensions
+RUN chmod +x install.sh && ./install.sh
 
-# Expose port 8188 for web UI access
+# Expose port for the web UI
 EXPOSE 8188
 
 # Run ComfyUI on container startup
