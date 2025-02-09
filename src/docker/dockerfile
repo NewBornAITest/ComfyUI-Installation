@@ -1,0 +1,59 @@
+# Use NVIDIA CUDA base image optimized for NVIDIA T4 GPU
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
+
+# Set environment variables for CUDA & NVIDIA
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+ENV CUDA_HOME=/usr/local/cuda
+
+# Install system dependencies
+# RUN apt-get update && apt-get install -y \
+#     wget software-properties-common jq build-essential \
+#     linux-headers-$(uname -r) git sudo curl && \
+#     rm -rf /var/lib/apt/lists/*
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+
+
+# Install system dependencies (including git)
+RUN apt-get update && apt-get install -y wget curl git && rm -rf /var/lib/apt/lists/*
+
+# Install Miniconda
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.11.0-2-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p /opt/miniconda && \
+    rm /tmp/miniconda.sh && \
+    /opt/miniconda/bin/conda init
+
+# Set Miniconda path in environment
+ENV PATH="/opt/miniconda/bin:$PATH"
+
+# Create a non-root user for security
+RUN useradd -m -s /bin/bash comfyuser && echo "comfyuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Set user to comfyuser
+USER comfyuser
+WORKDIR /home/comfyuser
+
+# Clone the ComfyUI installation repository
+RUN git clone https://github.com/NewBornAITest/ComfyUI-Installation.git
+
+# Copy installation scripts to a single directory
+WORKDIR /home/comfyuser/ComfyUI-Installation/src
+RUN chmod +x virgin_vm_v2.sh install_v2.sh && \
+    ./virgin_vm_v2.sh  # Run the installation script for CUDA, Miniconda, and dependencies
+
+# Activate Conda, install dependencies and PyTorch with CUDA support
+RUN source ~/.bashrc && \
+    pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+
+# Set working directory for ComfyUI setup
+WORKDIR /home/comfyuser/ComfyUI-Installation/src
+
+# Run the installation script for ComfyUI
+RUN chmod +x install_v2.sh && \
+    ./install_v2.sh  # This will install ComfyUI, extensions, and checkpoints
+
+# Expose port 8188 for web UI access
+EXPOSE 8188
+
+# Run ComfyUI on container startup
+CMD ["bash", "-c", "source ~/.bashrc && python /home/comfyuser/ComfyUI-NB/main.py --listen"]
