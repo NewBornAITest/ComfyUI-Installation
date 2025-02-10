@@ -12,6 +12,11 @@ chmod +x Miniconda3-py310_23.11.0-2-Linux-x86_64.sh
 ./Miniconda3-py310_23.11.0-2-Linux-x86_64.sh -b -p $HOME/miniconda3
 ~/miniconda3/bin/conda init bash
 source .bashrc
+# confirm GPU is attached
+lspci | grep -i nvidia
+# confirm GPU not recognized
+nvidia-smi
+# install nvidia drivers and CUDA
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
 wget https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda-repo-ubuntu2004-11-8-local_11.8.0-520.61.05-1_amd64.deb
 sudo dpkg -i cuda-repo-ubuntu2004-11-8-local_11.8.0-520.61.05-1_amd64.deb
