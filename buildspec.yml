@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - aws --version
+      - echo "Retrieving ECR login token..."
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 039612846309.dkr.ecr.us-east-1.amazonaws.com
+      - REPOSITORY_NAME="sdvesti-installation"
+      - IMAGE_TAG="latest"
+      - echo "ECR login successful"
+
+  build:
+    commands:
+      - echo "Building the Docker image..."
+      - docker build -t $REPOSITORY_NAME:latest -f src/docker/Dockerfile .
+
+  post_build:
+    commands:
+      - echo "Tagging the Docker image..."
+      - docker tag $REPOSITORY_NAME:latest 039612846309.dkr.ecr.us-east-1.amazonaws.com/$REPOSITORY_NAME:$IMAGE_TAG
+      - echo "Pushing the Docker image to ECR..."
+      - docker push 039612846309.dkr.ecr.us-east-1.amazonaws.com/$REPOSITORY_NAME:$IMAGE_TAG
+      - echo "Build and push completed successfully"
+
+artifacts:
+  files: "**/*"
