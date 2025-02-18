@@ -1,5 +1,5 @@
 # === Stage 1: Base Image with CUDA & System Dependencies ===
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 AS base
+FROM nvcr.io/nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 AS base
 
 # Set environment variables for CUDA & NVIDIA
 ENV NVIDIA_VISIBLE_DEVICES=all
