@@ -6,59 +6,31 @@ ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV CUDA_HOME=/usr/local/cuda
 
-# Install system dependencies
+# Install only the essential system dependencies (avoid reinstalling in scripts)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget curl git sudo unzip jq build-essential \
+    wget curl git sudo unzip jq build-essential software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
-# === Stage 2: Miniconda Installation ===
-FROM base AS conda
-
-# Install Miniconda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.11.0-2-Linux-x86_64.sh -O /tmp/miniconda.sh && \
-    bash /tmp/miniconda.sh -b -p /opt/miniconda && \
-    rm /tmp/miniconda.sh
-
-# Set Miniconda path
-ENV PATH="/opt/miniconda/bin:$PATH"
-
-# Create a non-root user
+# Create a non-root user (recommended for security)
 RUN useradd -m -s /bin/bash comfyuser && echo "comfyuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 USER comfyuser
 WORKDIR /home/comfyuser
 
-# === Stage 3: Install ComfyUI & Dependencies ===
-FROM conda AS comfyui
-
-# === Clone main Branch from GitHub ===
+# === Clone ComfyUI Repository (Main Branch) ===
 RUN git clone https://github.com/NewBornAITest/ComfyUI-Installation.git
 
-# Copy installation scripts
+# Set working directory for installation scripts
 WORKDIR /home/comfyuser/ComfyUI-Installation/src
 RUN chmod +x virgin_vm.sh install.sh
 
-# Run installation script for dependencies (skip model downloads)
-ENV SKIP_MODEL_DOWNLOADS=true
+# === Run Virgin VM Setup Script (Handles All Installations) ===
 RUN ./virgin_vm.sh && source ~/.bashrc
 
-# Install Python dependencies efficiently
-# COPY requirements.txt /tmp/
-# RUN pip install --no-cache-dir -r /tmp/requirements.txt
+# === Run Installation Script for ComfyUI ===
+RUN ./install.sh
 
-# Install PyTorch with CUDA support
-RUN pip install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
-
-# === Stage 4: Final Runtime Image ===
-FROM comfyui AS final
-
-# Set working directory for ComfyUI
-WORKDIR /home/comfyuser/ComfyUI-Installation/src
-
-# Install ComfyUI and extensions
-RUN chmod +x install.sh && ./install.sh
-
-# Expose port for the web UI
+# === Expose Web UI Port ===
 EXPOSE 8188
 
-# Run ComfyUI on container startup
+# === Start ComfyUI on Container Startup ===
 CMD ["bash", "-c", "source ~/.bashrc && python /home/comfyuser/ComfyUI-NB/main.py --listen"]
