@@ -30,8 +30,8 @@ WORKDIR /home/comfyuser
 # === Stage 3: Install ComfyUI & Dependencies ===
 FROM conda AS comfyui
 
-# === Clone Specific Branch from GitHub ===
-RUN git clone --branch docker-gpu --single-branch https://github.com/NewBornAITest/ComfyUI-Installation.git
+# === Clone main Branch from GitHub ===
+RUN git clone https://github.com/NewBornAITest/ComfyUI-Installation.git
 
 # Copy installation scripts
 WORKDIR /home/comfyuser/ComfyUI-Installation/src
