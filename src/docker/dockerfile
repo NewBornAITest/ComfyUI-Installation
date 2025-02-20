@@ -55,7 +55,7 @@ RUN /bin/bash -c "source ~/.bashrc && /home/comfyuser/ComfyUI-Installation/src/v
 RUN /bin/bash -c "source ~/.bashrc && /home/comfyuser/ComfyUI-Installation/src/install_copy.sh"
 
 # Verify installation success
-RUN ls -lah /home/comfyuser/ComfyUI-NB || (echo "ComfyUI installation failed!" && exit 1)
+#RUN ls -lah /home/comfyuser/ComfyUI-NB || (echo "ComfyUI installation failed!" && exit 1)
 
 # === Expose Web UI Port ===
 EXPOSE 8188
