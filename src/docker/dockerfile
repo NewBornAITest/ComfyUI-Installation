@@ -33,18 +33,29 @@ RUN conda init bash && conda install -y python=3.10 pip
 # Confirm Python & Pip installation
 RUN python --version && pip --version
 
-# === Clone ComfyUI Repository (Main Branch) ===
-RUN git clone https://github.com/NewBornAITest/ComfyUI-Installation.git
+# === Clone ComfyUI Repository (Main Branch) and Ensure Correct Files Exist ===
+RUN rm -rf /home/comfyuser/ComfyUI-Installation && \
+    git clone --branch main --single-branch https://github.com/NewBornAITest/ComfyUI-Installation.git && \
+    ls -lah /home/comfyuser/ComfyUI-Installation && \
+    ls -lah /home/comfyuser/ComfyUI-Installation/src
 
 # Set working directory for installation scripts
 WORKDIR /home/comfyuser/ComfyUI-Installation/src
-RUN chmod +x virgin_vm_copy.sh install.sh
+
+# Verify required scripts exist before proceeding
+RUN test -f virgin_vm_copy.sh && test -f install_copy.sh || (echo "Required scripts missing!" && exit 1)
+
+# Make sure the scripts are executable
+RUN chmod +x /home/comfyuser/ComfyUI-Installation/src/virgin_vm_copy.sh /home/comfyuser/ComfyUI-Installation/src/install_copy.sh
 
 # === Run Virgin VM Setup Script (Handles All Installations) ===
-RUN /bin/bash -c "source ~/.bashrc && ./virgin_vm_copy.sh"
+RUN /bin/bash -c "source ~/.bashrc && /home/comfyuser/ComfyUI-Installation/src/virgin_vm_copy.sh"
 
 # === Run Installation Script for ComfyUI ===
-RUN /bin/bash -c "source ~/.bashrc && ./install.sh"
+RUN /bin/bash -c "source ~/.bashrc && /home/comfyuser/ComfyUI-Installation/src/install_copy.sh"
+
+# Verify installation success
+RUN ls -lah /home/comfyuser/ComfyUI-NB || (echo "ComfyUI installation failed!" && exit 1)
 
 # === Expose Web UI Port ===
 EXPOSE 8188
